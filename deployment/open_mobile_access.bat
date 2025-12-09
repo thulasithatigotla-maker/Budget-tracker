@@ -1,0 +1,3 @@
+@echo off
+echo Opening Mobile Access Solution...
+start "" "mobile_access_solution.html"

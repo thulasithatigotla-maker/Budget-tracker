@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Manager - Mobile Access</title>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+            backdrop-filter: blur(10px);
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #6a11cb;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .qr-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+        
+        .qr-card h2 {
+            color: #6a11cb;
+            margin-top: 0;
+        }
+        
+        .qrcode-container {
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 15px 0;
+        }
+        
+        .url-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .btn.secondary {
+            background: #2d2d2d;
+            border: 1px solid #444;
+        }
+        
+        .instructions {
+            background: rgba(106, 17, 203, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            border: 1px solid rgba(106, 17, 203, 0.3);
+        }
+        
+        .instructions h2 {
+            color: #6a11cb;
+            margin-top: 0;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .note {
+            background: rgba(255, 152, 0, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .qr-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Finance Manager</h1>
+        <p class="subtitle">Mobile Access QR Codes</p>
+        
+        <div class="note">
+            <p>Scan these QR codes with your mobile device to access different parts of the Finance Manager app</p>
+        </div>
+        
+        <div class="qr-grid">
+            <div class="qr-card">
+                <h2>🏠 Main App</h2>
+                <div class="qrcode-container">
+                    <div id="qrcode-main"></div>
+                </div>
+                <div class="url-display" id="url-main"></div>
+                <button class="btn" onclick="openUrl('main')">Open in Browser</button>
+            </div>
+            
+            <div class="qr-card">
+                <h2>👤 Facial Recognition Demo</h2>
+                <div class="qrcode-container">
+                    <div id="qrcode-facial"></div>
+                </div>
+                <div class="url-display" id="url-facial"></div>
+                <button class="btn" onclick="openUrl('facial')">Open in Browser</button>
+            </div>
+            
+            <div class="qr-card">
+                <h2>⚙️ Biometric Test</h2>
+                <div class="qrcode-container">
+                    <div id="qrcode-test"></div>
+                </div>
+                <div class="url-display" id="url-test"></div>
+                <button class="btn" onclick="openUrl('test')">Open in Browser</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>How to Use</h2>
+            <ol>
+                <li>Scan any QR code with your mobile device camera</li>
+                <li>Tap the notification that appears to open the link</li>
+                <li>For facial recognition, navigate to Settings > Face ID Demo</li>
+                <li>To use Face ID for app access, enable Biometric Lock in Settings</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const ipAddress = '192.168.0.222';
+        const port = '3000';
+        
+        // URLs
+        const urls = {
+            main: `http://${ipAddress}:${port}/`,
+            facial: `http://${ipAddress}:${port}/facial-recognition-demo`,
+            test: `http://${ipAddress}:${port}/biometric-test`
+        };
+        
+        // Display URLs
+        document.getElementById('url-main').textContent = urls.main;
+        document.getElementById('url-facial').textContent = urls.facial;
+        document.getElementById('url-test').textContent = urls.test;
+        
+        // Generate QR codes
+        function generateQRCode(elementId, url) {
+            new QRCode(document.getElementById(elementId), {
+                text: url,
+                width: 150,
+                height: 150,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+        
+        // Open URL in browser
+        function openUrl(type) {
+            window.open(urls[type], '_blank');
+        }
+        
+        // Generate all QR codes on page load
+        window.onload = function() {
+            generateQRCode('qrcode-main', urls.main);
+            generateQRCode('qrcode-facial', urls.facial);
+            generateQRCode('qrcode-test', urls.test);
+        };
+    </script>
+</body>
+</html>

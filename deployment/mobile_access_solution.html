@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Manager - Mobile Access</title>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #6a11cb;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        
+        .network-info {
+            background: rgba(106, 17, 203, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(106, 17, 203, 0.3);
+            text-align: center;
+        }
+        
+        .network-info h2 {
+            color: #6a11cb;
+            margin-top: 0;
+        }
+        
+        .ip-address {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #6a11cb;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .qr-container {
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .url-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            word-break: break-all;
+            font-family: monospace;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .btn.secondary {
+            background: #2d2d2d;
+            border: 1px solid #444;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .instructions h2 {
+            color: #6a11cb;
+            margin-top: 0;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .note {
+            background: rgba(255, 152, 0, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Finance Manager</h1>
+        <p class="subtitle">Mobile Access Solution</p>
+        
+        <div class="network-info">
+            <h2>Network Access Information</h2>
+            <p>Your local IP address is:</p>
+            <div class="ip-address" id="ip-address">192.168.0.222</div>
+            <p>Make sure your mobile device is on the same network</p>
+        </div>
+        
+        <div class="note">
+            <p>Scan the QR code below with your mobile device to access the Finance Manager app</p>
+        </div>
+        
+        <div class="qr-section">
+            <h2>Mobile Access QR Code</h2>
+            <div class="qr-container">
+                <div id="qrcode"></div>
+            </div>
+            <div class="url-display" id="app-url"></div>
+            <button class="btn" onclick="openApp()">Open App in Browser</button>
+            <button class="btn secondary" onclick="regenerateQR()">Regenerate QR Code</button>
+        </div>
+        
+        <div class="instructions">
+            <h2>How to Access on Mobile</h2>
+            <ol>
+                <li>Ensure your mobile device is connected to the same WiFi network</li>
+                <li>Scan the QR code above with your mobile camera</li>
+                <li>Tap the notification that appears to open the link</li>
+                <li>If prompted, allow the browser to open the link</li>
+                <li>The Finance Manager app will load in your mobile browser</li>
+            </ol>
+        </div>
+        
+        <div class="instructions">
+            <h2>Alternative Access Methods</h2>
+            <ol>
+                <li>Open your mobile browser</li>
+                <li>Enter this address: <strong>http://192.168.0.222:3000</strong></li>
+                <li>Bookmark the page for easy access</li>
+                <li>For best experience, add to Home Screen:</li>
+                <ul>
+                    <li>iOS: Tap Share → Add to Home Screen</li>
+                    <li>Android: Tap Menu → Add to Home Screen</li>
+                </ul>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const ipAddress = '192.168.0.222';
+        const port = '3000';
+        const appUrl = `http://${ipAddress}:${port}/`;
+        
+        // Display URL
+        document.getElementById('app-url').textContent = appUrl;
+        document.getElementById('ip-address').textContent = ipAddress;
+        
+        // Generate QR code
+        function generateQRCode() {
+            // Clear previous QR code
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // Generate new QR code
+            new QRCode(document.getElementById('qrcode'), {
+                text: appUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+        
+        // Open app in browser
+        function openApp() {
+            window.open(appUrl, '_blank');
+        }
+        
+        // Regenerate QR code
+        function regenerateQR() {
+            generateQRCode();
+        }
+        
+        // Generate QR code on page load
+        window.onload = function() {
+            generateQRCode();
+        };
+    </script>
+</body>
+</html>

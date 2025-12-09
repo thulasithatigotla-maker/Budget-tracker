@@ -1,0 +1,3 @@
+@echo off
+echo Opening Mobile Access QR Codes...
+start "" "mobile_access_qr.html"

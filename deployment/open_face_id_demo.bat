@@ -1,0 +1,3 @@
+@echo off
+echo Opening Face ID Demo...
+start "" "face_id_demo.html"

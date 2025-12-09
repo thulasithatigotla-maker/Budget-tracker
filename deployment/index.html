@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/assets/favicon-B_SY1GJM.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinanceManager - Personal Finance Manager</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #0a0a0a;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+      
+      #root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(100, 108, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #646cff;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      .loading-text {
+        color: #ccc;
+        font-size: 1.2rem;
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-Czs1Bo6j.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bpyv5cwO.css">
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading FinanceManager...</div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face ID Demo - Finance Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #6a11cb;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .face-icon-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 30px auto;
+        }
+        
+        .face-icon {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        .face-outline {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 5px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            box-sizing: border-box;
+        }
+        
+        .eye {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            top: 65px;
+        }
+        
+        .left-eye {
+            left: 50px;
+        }
+        
+        .right-eye {
+            right: 50px;
+        }
+        
+        .mouth {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            border-bottom: 5px solid white;
+            border-radius: 0 0 50% 50%;
+            bottom: 45px;
+        }
+        
+        .scan-line {
+            position: absolute;
+            width: 180px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.8);
+            top: 0;
+            animation: scan 2s linear infinite;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes scan {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(180px);
+            }
+        }
+        
+        .status {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        
+        .status-text {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+        
+        .support-status {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .supported {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+        }
+        
+        .not-supported {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid rgba(244, 67, 54, 0.4);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #2d2d2d;
+            color: white;
+            border: 1px solid #444;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .info-section {
+            background: rgba(106, 17, 203, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid rgba(106, 17, 203, 0.3);
+            text-align: left;
+        }
+        
+        .info-section h3 {
+            color: #6a11cb;
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        .info-section ul {
+            padding-left: 20px;
+            color: #aaa;
+        }
+        
+        .info-section li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .error {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .success {
+            color: #4caf50;
+            background: rgba(76, 175, 80, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .face-icon-container {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .face-outline {
+                width: 110px;
+                height: 110px;
+            }
+            
+            .eye {
+                top: 55px;
+            }
+            
+            .left-eye {
+                left: 40px;
+            }
+            
+            .right-eye {
+                right: 40px;
+            }
+            
+            .mouth {
+                width: 30px;
+                height: 15px;
+                bottom: 35px;
+            }
+            
+            .scan-line {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face ID Demo</h1>
+        <p class="subtitle">Finance Manager Biometric Authentication</p>
+        
+        <div class="face-icon-container">
+            <div class="face-icon">
+                <div class="face-outline"></div>
+                <div class="eye left-eye"></div>
+                <div class="eye right-eye"></div>
+                <div class="mouth"></div>
+                <div class="scan-line"></div>
+            </div>
+        </div>
+        
+        <div class="status">
+            <div class="status-text">Checking biometric support...</div>
+            <div id="support-status" class="support-status">Checking...</div>
+        </div>
+        
+        <div id="messages"></div>
+        
+        <button id="register-btn" class="btn btn-primary" disabled>Register Face</button>
+        <button id="authenticate-btn" class="btn btn-primary" disabled>Authenticate with Face ID</button>
+        <button id="clear-btn" class="btn btn-secondary" disabled>Clear Face Data</button>
+        
+        <div class="info-section">
+            <h3>How Face ID Works</h3>
+            <ul>
+                <li>Face data is stored securely on your device only</li>
+                <li>No facial images are captured or stored</li>
+                <li>Data never leaves your device</li>
+                <li>Uses Web Authentication API for secure authentication</li>
+                <li>Works with Face ID (iOS), Windows Hello (Windows), and other platform authenticators</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const supportStatusEl = document.getElementById('support-status');
+        const registerBtn = document.getElementById('register-btn');
+        const authenticateBtn = document.getElementById('authenticate-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const messagesEl = document.getElementById('messages');
+        
+        // Check if Web Authentication API is supported
+        const isSupported = !!window.PublicKeyCredential;
+        
+        // Update UI based on support status
+        if (isSupported) {
+            supportStatusEl.textContent = '✓ Supported';
+            supportStatusEl.className = 'support-status supported';
+            registerBtn.disabled = false;
+        } else {
+            supportStatusEl.textContent = '✗ Not Supported';
+            supportStatusEl.className = 'support-status not-supported';
+            showMessage('Biometric authentication is not supported in this browser. Try using Chrome, Firefox, Safari, or Edge.', 'error');
+        }
+        
+        // Show message function
+        function showMessage(text, type) {
+            const messageEl = document.createElement('div');
+            messageEl.className = type;
+            messageEl.textContent = text;
+            messagesEl.appendChild(messageEl);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.parentNode.removeChild(messageEl);
+                }
+            }, 5000);
+        }
+        
+        // Generate random buffer
+        function generateRandomBuffer(length) {
+            const buffer = new Uint8Array(length);
+            window.crypto.getRandomValues(buffer);
+            return buffer;
+        }
+        
+        // Convert ArrayBuffer to Base64
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+        
+        // Convert Base64 to ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+        
+        // Register biometric credential
+        async function registerCredential() {
+            try {
+                // Disable buttons during operation
+                registerBtn.disabled = true;
+                registerBtn.textContent = 'Registering...';
+                
+                // Create a random user ID
+                const userId = generateRandomBuffer(32);
+                
+                const publicKey = {
+                    challenge: generateRandomBuffer(32),
+                    rp: {
+                        name: 'Finance Manager Demo',
+                        id: window.location.hostname
+                    },
+                    user: {
+                        id: userId,
+                        name: 'demo_user',
+                        displayName: 'Demo User'
+                    },
+                    pubKeyCredParams: [
+                        {
+                            type: 'public-key',
+                            alg: -7 // ES256
+                        }
+                    ],
+                    authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'required'
+                    },
+                    timeout: 60000,
+                    attestation: 'none'
+                };
+                
+                const credential = await navigator.credentials.create({ publicKey });
+                
+                // Store credential ID in localStorage
+                const credentialId = arrayBufferToBase64(credential.rawId);
+                localStorage.setItem('demoBiometricCredentialId', credentialId);
+                
+                // Enable authentication button
+                authenticateBtn.disabled = false;
+                clearBtn.disabled = false;
+                
+                showMessage('Face registered successfully! You can now authenticate with Face ID.', 'success');
+            } catch (error) {
+                console.error('Registration failed:', error);
+                showMessage('Failed to register face: ' + error.message, 'error');
+            } finally {
+                // Re-enable button
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Register Face';
+            }
+        }
+        
+        // Authenticate with biometric credential
+        async function authenticate() {
+            try {
+                // Disable buttons during operation
+                authenticateBtn.disabled = true;
+                authenticateBtn.textContent = 'Authenticating...';
+                
+                // Get stored credential ID
+                const storedCredentialId = localStorage.getItem('demoBiometricCredentialId');
+                
+                if (!storedCredentialId) {
+                    throw new Error('No face registered. Please register your face first.');
+                }
+                
+                const publicKey = {
+                    challenge: generateRandomBuffer(32),
+                    allowCredentials: [
+                        {
+                            id: base64ToArrayBuffer(storedCredentialId),
+                            type: 'public-key',
+                            transports: ['internal']
+                        }
+                    ],
+                    userVerification: 'required',
+                    timeout: 60000
+                };
+                
+                const assertion = await navigator.credentials.get({ publicKey });
+                
+                if (assertion) {
+                    showMessage('Face authenticated successfully! Access granted.', 'success');
+                }
+            } catch (error) {
+                console.error('Authentication failed:', error);
+                showMessage('Face authentication failed: ' + error.message, 'error');
+            } finally {
+                // Re-enable button
+                authenticateBtn.disabled = false;
+                authenticateBtn.textContent = 'Authenticate with Face ID';
+            }
+        }
+        
+        // Clear biometric credentials
+        function clearCredentials() {
+            localStorage.removeItem('demoBiometricCredentialId');
+            authenticateBtn.disabled = true;
+            clearBtn.disabled = true;
+            showMessage('Face data cleared.', 'success');
+        }
+        
+        // Event listeners
+        registerBtn.addEventListener('click', registerCredential);
+        authenticateBtn.addEventListener('click', authenticate);
+        clearBtn.addEventListener('click', clearCredentials);
+        
+        // Check if credentials already exist
+        window.addEventListener('DOMContentLoaded', () => {
+            const storedCredentialId = localStorage.getItem('demoBiometricCredentialId');
+            if (storedCredentialId) {
+                authenticateBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
