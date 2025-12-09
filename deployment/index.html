@@ -1,63 +1,995 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/assets/favicon-B_SY1GJM.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FinanceManager - Personal Finance Manager</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#9333ea">
+    <title>Budget Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #0a0a0a;
-        color: #ffffff;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      }
-      
-      #root {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .loading {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        flex-direction: column;
-        gap: 1rem;
-      }
-      
-      .spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid rgba(100, 108, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: #646cff;
-        animation: spin 1s linear infinite;
-      }
-      
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      
-      .loading-text {
-        color: #ccc;
-        font-size: 1.2rem;
-      }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
     </style>
-    <script type="module" crossorigin src="/assets/index-Czs1Bo6j.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Bpyv5cwO.css">
-  </head>
-  <body>
-    <div id="root">
-      <div class="loading">
-        <div class="spinner"></div>
-        <div class="loading-text">Loading FinanceManager...</div>
-      </div>
-    </div>
+</head>
+<body>
+    <div id="app"></div>
 
-  </body>
+    <script>
+        // Storage utilities
+        const storage = {
+            getUsers: () => {
+                try {
+                    return JSON.parse(localStorage.getItem('budgetUsers') || '[]');
+                } catch {
+                    return [];
+                }
+            },
+            saveUsers: (users) => {
+                localStorage.setItem('budgetUsers', JSON.stringify(users));
+            },
+            getCurrentUser: () => {
+                try {
+                    return JSON.parse(localStorage.getItem('currentUser'));
+                } catch {
+                    return null;
+                }
+            },
+            setCurrentUser: (user) => {
+                localStorage.setItem('currentUser', JSON.stringify(user));
+            },
+            clearCurrentUser: () => {
+                localStorage.removeItem('currentUser');
+            },
+            getTransactions: () => {
+                try {
+                    return JSON.parse(localStorage.getItem('transactions') || '[]');
+                } catch {
+                    return [];
+                }
+            },
+            saveTransactions: (transactions) => {
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+            },
+            getGoals: () => {
+                try {
+                    return JSON.parse(localStorage.getItem('goals') || '[]');
+                } catch {
+                    return [];
+                }
+            },
+            saveGoals: (goals) => {
+                localStorage.setItem('goals', JSON.stringify(goals));
+            }
+        };
 
-</html>
+        // Initialize with demo account if no users exist
+        function initializeUsers() {
+            const existingUsers = storage.getUsers();
+            if (existingUsers.length === 0) {
+                const demoUser = { 
+                    email: 'demo@budget.com', 
+                    password: 'demo123', 
+                    name: 'Demo User' 
+                };
+                storage.saveUsers([demoUser]);
+                return [demoUser];
+            }
+            return existingUsers;
+        }
+
+        // App State
+        let state = {
+            isLoggedIn: !!storage.getCurrentUser(),
+            currentUser: storage.getCurrentUser(),
+            users: initializeUsers(),
+            transactions: storage.getTransactions(),
+            goals: storage.getGoals(),
+            currentPage: 'dashboard',
+            showSignUp: false,
+            showForgotPassword: false,
+            showForgotUsername: false,
+            showAddTransaction: false,
+            showAddGoal: false,
+            showEditProfile: false,
+            showResetPassword: false,
+            sidebarOpen: false,
+            errorMessage: '',
+            successMessage: '',
+            editingTransaction: null,
+            editingGoal: null
+        };
+
+        // SVG Icons
+        const icons = {
+            dollar: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
+            home: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+            target: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>',
+            settings: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.656-13.656L13.414 9.586M10.586 13.414l-4.242 4.242m13.656 0L15.414 13.414M9.586 9.586L5.344 5.344"></path></svg>',
+            logout: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>',
+            menu: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>',
+            x: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+            plus: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>',
+            up: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>',
+            down: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>',
+            edit: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>',
+            trash: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>'
+        };
+
+        function setState(newState) {
+            state = { ...state, ...newState };
+            render();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = e.target.email.value.toLowerCase().trim();
+            const password = e.target.password.value;
+            
+            const user = state.users.find(u => u.email.toLowerCase() === email);
+            
+            if (!user) {
+                setState({ errorMessage: 'Email not found. Please sign up first.' });
+                return;
+            }
+            
+            if (user.password !== password) {
+                setState({ errorMessage: 'Incorrect password. Please try again.' });
+                return;
+            }
+            
+            storage.setCurrentUser(user);
+            setState({ 
+                isLoggedIn: true, 
+                currentUser: user, 
+                errorMessage: '',
+                transactions: storage.getTransactions(),
+                goals: storage.getGoals()
+            });
+        }
+
+        function handleSignUp(e) {
+            e.preventDefault();
+            const name = e.target.name.value.trim();
+            const email = e.target.email.value.toLowerCase().trim();
+            const password = e.target.password.value;
+            const confirmPassword = e.target.confirmPassword.value;
+            
+            if (password !== confirmPassword) {
+                setState({ errorMessage: 'Passwords do not match.' });
+                return;
+            }
+            
+            if (password.length < 6) {
+                setState({ errorMessage: 'Password must be at least 6 characters long.' });
+                return;
+            }
+            
+            const existingUser = state.users.find(u => u.email.toLowerCase() === email);
+            if (existingUser) {
+                setState({ errorMessage: 'Email already registered. Redirecting to login...' });
+                setTimeout(() => setState({ showSignUp: false, errorMessage: '' }), 2000);
+                return;
+            }
+            
+            const newUser = { email, password, name };
+            const updatedUsers = [...state.users, newUser];
+            storage.saveUsers(updatedUsers);
+            
+            setState({ 
+                users: updatedUsers,
+                successMessage: 'Account created successfully! Redirecting to login...',
+                errorMessage: ''
+            });
+            
+            setTimeout(() => setState({ showSignUp: false, successMessage: '', errorMessage: '' }), 2000);
+        }
+
+        function handleLogout() {
+            storage.clearCurrentUser();
+            setState({ 
+                isLoggedIn: false, 
+                currentUser: null,
+                transactions: [],
+                goals: [],
+                currentPage: 'dashboard'
+            });
+        }
+
+        function handleAddTransaction(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const transaction = {
+                id: state.editingTransaction?.id || Date.now(),
+                type: formData.get('type'),
+                category: formData.get('category'),
+                amount: parseFloat(formData.get('amount')),
+                date: formData.get('date'),
+                description: formData.get('description') || ''
+            };
+            
+            let updatedTransactions;
+            if (state.editingTransaction) {
+                updatedTransactions = state.transactions.map(t => 
+                    t.id === transaction.id ? transaction : t
+                );
+            } else {
+                updatedTransactions = [transaction, ...state.transactions];
+            }
+            
+            storage.saveTransactions(updatedTransactions);
+            setState({ 
+                transactions: updatedTransactions, 
+                showAddTransaction: false,
+                editingTransaction: null
+            });
+        }
+
+        function handleAddGoal(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const goal = {
+                id: state.editingGoal?.id || Date.now(),
+                name: formData.get('name'),
+                target: parseFloat(formData.get('target')),
+                current: parseFloat(formData.get('current') || 0)
+            };
+            
+            let updatedGoals;
+            if (state.editingGoal) {
+                updatedGoals = state.goals.map(g => 
+                    g.id === goal.id ? goal : g
+                );
+            } else {
+                updatedGoals = [...state.goals, goal];
+            }
+            
+            storage.saveGoals(updatedGoals);
+            setState({ 
+                goals: updatedGoals, 
+                showAddGoal: false,
+                editingGoal: null
+            });
+        }
+
+        function deleteTransaction(id) {
+            const updated = state.transactions.filter(t => t.id !== id);
+            storage.saveTransactions(updated);
+            setState({ transactions: updated });
+        }
+
+        function deleteGoal(id) {
+            const updated = state.goals.filter(g => g.id !== id);
+            storage.saveGoals(updated);
+            setState({ goals: updated });
+        }
+
+        function handleUpdateProfile(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const newName = formData.get('name').trim();
+            const newEmail = formData.get('email').toLowerCase().trim();
+            
+            const emailExists = state.users.find(u => 
+                u.email.toLowerCase() === newEmail && 
+                u.email !== state.currentUser.email
+            );
+            
+            if (emailExists) {
+                setState({ errorMessage: 'Email already in use by another account.' });
+                return;
+            }
+            
+            const updatedUsers = state.users.map(u => 
+                u.email === state.currentUser.email 
+                    ? { ...u, name: newName, email: newEmail }
+                    : u
+            );
+            
+            const updatedUser = { ...state.currentUser, name: newName, email: newEmail };
+            storage.saveUsers(updatedUsers);
+            storage.setCurrentUser(updatedUser);
+            
+            setState({ 
+                users: updatedUsers,
+                currentUser: updatedUser,
+                successMessage: 'Profile updated successfully!'
+            });
+            
+            setTimeout(() => setState({ showEditProfile: false, successMessage: '' }), 2000);
+        }
+
+        function handleResetPassword(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const currentPassword = formData.get('currentPassword');
+            const newPassword = formData.get('newPassword');
+            const confirmPassword = formData.get('confirmPassword');
+            
+            if (currentPassword !== state.currentUser.password) {
+                setState({ errorMessage: 'Current password is incorrect.' });
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                setState({ errorMessage: 'New password must be at least 6 characters long.' });
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                setState({ errorMessage: 'New passwords do not match.' });
+                return;
+            }
+            
+            const updatedUsers = state.users.map(u => 
+                u.email === state.currentUser.email 
+                    ? { ...u, password: newPassword }
+                    : u
+            );
+            
+            const updatedUser = { ...state.currentUser, password: newPassword };
+            storage.saveUsers(updatedUsers);
+            storage.setCurrentUser(updatedUser);
+            
+            setState({ 
+                users: updatedUsers,
+                currentUser: updatedUser,
+                successMessage: 'Password changed successfully!'
+            });
+            
+            setTimeout(() => setState({ showResetPassword: false, successMessage: '', errorMessage: '' }), 2000);
+        }
+
+        function handleForgotUsername(e) {
+            e.preventDefault();
+            const name = e.target.name.value.trim();
+            const user = state.users.find(u => u.name.toLowerCase() === name.toLowerCase());
+            
+            if (!user) {
+                setState({ errorMessage: 'No account found with that name.' });
+                return;
+            }
+            
+            setState({ successMessage: `Your email is: ${user.email}` });
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = e.target.email.value.toLowerCase().trim();
+            const user = state.users.find(u => u.email.toLowerCase() === email);
+            
+            if (!user) {
+                setState({ errorMessage: 'No account found with that email.' });
+                return;
+            }
+            
+            setState({ successMessage: `Your password is: ${user.password}` });
+        }
+
+        function getStats() {
+            const income = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+            const expenses = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+            return { income, expenses, balance: income - expenses };
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Render Functions
+        function renderLoginPage() {
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full mb-4">
+                                ${icons.dollar}
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">Budget Tracker</h1>
+                            <p class="text-gray-600">Manage your finances with ease</p>
+                        </div>
+                        
+                        ${state.errorMessage ? `<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl flex items-start"><span class="text-red-600 mr-2">⚠️</span><span>${escapeHtml(state.errorMessage)}</span></div>` : ''}
+                        ${state.successMessage ? `<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl flex items-start"><span class="text-green-600 mr-2">✓</span><span>${escapeHtml(state.successMessage)}</span></div>` : ''}
+                        
+                        <div class="mb-4 p-3 bg-blue-50 border border-blue-300 text-blue-700 rounded-xl text-sm">
+                            <strong>Demo Account:</strong><br>
+                            Email: demo@budget.com<br>
+                            Password: demo123
+                        </div>
+                        
+                        <form onsubmit="handleLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="your@email.com">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" name="password" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                                Sign In
+                            </button>
+                        </form>
+                        
+                        <div class="flex justify-between mt-4 text-sm">
+                            <span onclick="setState({ showForgotUsername: true, errorMessage: '', successMessage: '' })" class="text-purple-600 font-medium cursor-pointer hover:underline">Forgot Email?</span>
+                            <span onclick="setState({ showForgotPassword: true, errorMessage: '', successMessage: '' })" class="text-purple-600 font-medium cursor-pointer hover:underline">Forgot Password?</span>
+                        </div>
+                        
+                        <p class="text-center text-sm text-gray-600 mt-6">
+                            Don't have an account? <span onclick="setState({ showSignUp: true, errorMessage: '', successMessage: '' })" class="text-purple-600 font-semibold cursor-pointer hover:underline">Sign up</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSignUpPage() {
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full mb-4">
+                                ${icons.dollar}
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+                            <p class="text-gray-600">Join us to manage your finances</p>
+                        </div>
+                        
+                        ${state.errorMessage ? `<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">${escapeHtml(state.errorMessage)}</div>` : ''}
+                        ${state.successMessage ? `<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">${escapeHtml(state.successMessage)}</div>` : ''}
+                        
+                        <form onsubmit="handleSignUp(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                <input type="text" name="name" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="John Doe">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                <input type="email" name="email" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="your@email.com">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                                <input type="password" name="password" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                                <input type="password" name="confirmPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="••••••••">
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                                Sign Up
+                            </button>
+                        </form>
+                        
+                        <p class="text-center text-sm text-gray-600 mt-6">
+                            Already have an account? <span onclick="setState({ showSignUp: false, errorMessage: '', successMessage: '' })" class="text-purple-600 font-semibold cursor-pointer hover:underline">Sign in</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderForgotPages(type) {
+            const isForgotUsername = type === 'username';
+            return `
+                <div class="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full mb-4">
+                                ${icons.dollar}
+                            </div>
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">Forgot ${isForgotUsername ? 'Username' : 'Password'}</h1>
+                            <p class="text-gray-600">Enter your ${isForgotUsername ? 'name' : 'email'} to recover your ${isForgotUsername ? 'email' : 'password'}</p>
+                        </div>
+                        
+                        ${state.errorMessage ? `<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">${escapeHtml(state.errorMessage)}</div>` : ''}
+                        ${state.successMessage ? `<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">${escapeHtml(state.successMessage)}</div>` : ''}
+                        
+                        <form onsubmit="${isForgotUsername ? 'handleForgotUsername' : 'handleForgotPassword'}(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">${isForgotUsername ? 'Full Name' : 'Email'}</label>
+                                <input type="${isForgotUsername ? 'text' : 'email'}" name="${isForgotUsername ? 'name' : 'email'}" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition" placeholder="${isForgotUsername ? 'Enter your full name' : 'your@email.com'}">
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                                Recover ${isForgotUsername ? 'Email' : 'Password'}
+                            </button>
+                        </form>
+                        
+                        <p class="text-center text-sm text-gray-600 mt-6">
+                            Remember your credentials? <span onclick="setState({ showForgotUsername: false, showForgotPassword: false, errorMessage: '', successMessage: '' })" class="text-purple-600 font-semibold cursor-pointer hover:underline">Back to Login</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDashboard() {
+            const stats = getStats();
+            const recentTransactions = state.transactions.slice(0, 5);
+            
+            return `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+                            <p class="text-sm opacity-90 mb-1">Total Balance</p>
+                            <p class="text-3xl font-bold">$${stats.balance.toFixed(2)}</p>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-lg">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="text-sm opacity-90">Income</p>
+                                ${icons.up}
+                            </div>
+                            <p class="text-3xl font-bold">$${stats.income.toFixed(2)}</p>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="text-sm opacity-90">Expenses</p>
+                                ${icons.down}
+                            </div>
+                            <p class="text-3xl font-bold">$${stats.expenses.toFixed(2)}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Recent Transactions</h3>
+                        <div class="space-y-3">
+                            ${recentTransactions.length > 0 ? recentTransactions.map(t => `
+                                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                            ${t.type === 'income' ? icons.up : icons.down}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">${t.date}</p>
+                                        </div>
+                                    </div>
+                                    <p class="font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                        ${t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                                    </p>
+                                </div>
+                            `).join('') : '<p class="text-gray-500 text-center py-4">No transactions yet</p>'}
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Goals Progress</h3>
+                        <div class="space-y-4">
+                            ${state.goals.length > 0 ? state.goals.map(goal => {
+                                const progress = (goal.current / goal.target) * 100;
+                                return `
+                                    <div>
+                                        <div class="flex justify-between mb-2">
+                                            <span class="font-semibold text-gray-800">${escapeHtml(goal.name)}</span>
+                                            <span class="text-sm text-gray-600">${goal.current.toFixed(2)} / ${goal.target.toFixed(2)}</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-gradient-to-r from-purple-500 to-cyan-500 h-3 rounded-full transition-all duration-300" style="width: ${Math.min(progress, 100)}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') : '<p class="text-gray-500 text-center py-4">No goals set yet</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTransactions() {
+            return `
+                <div class="space-y-4">
+                    <button onclick="setState({ showAddTransaction: true })" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition duration-200">
+                        ${icons.plus}
+                        <span>Add Transaction</span>
+                    </button>
+
+                    <div class="bg-white rounded-2xl shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">All Transactions</h3>
+                        <div class="space-y-3">
+                            ${state.transactions.length > 0 ? state.transactions.map(t => `
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                                    <div class="flex items-center space-x-3 flex-1">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center ${t.type === 'income' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                                            ${t.type === 'income' ? icons.up : icons.down}
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-gray-800">${escapeHtml(t.category)}</p>
+                                            <p class="text-sm text-gray-500">${escapeHtml(t.description)}</p>
+                                            <p class="text-xs text-gray-400">${t.date}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <p class="font-bold text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                            ${t.type === 'income' ? '+' : '-'}${t.amount.toFixed(2)}
+                                        </p>
+                                        <button onclick='setState({ editingTransaction: ${JSON.stringify(t)}, showAddTransaction: true })' class="text-blue-600 hover:text-blue-800 p-2">
+                                            ${icons.edit}
+                                        </button>
+                                        <button onclick="deleteTransaction(${t.id})" class="text-red-600 hover:text-red-800 p-2">
+                                            ${icons.trash}
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('') : '<p class="text-gray-500 text-center py-8">No transactions yet. Add your first transaction!</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGoals() {
+            return `
+                <div class="space-y-4">
+                    <button onclick="setState({ showAddGoal: true })" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition duration-200">
+                        ${icons.plus}
+                        <span>Add Goal</span>
+                    </button>
+
+                    <div class="space-y-4">
+                        ${state.goals.length > 0 ? state.goals.map(goal => {
+                            const progress = (goal.current / goal.target) * 100;
+                            return `
+                                <div class="bg-white rounded-2xl shadow-md p-6">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 class="text-xl font-bold text-gray-800">${escapeHtml(goal.name)}</h3>
+                                            <p class="text-gray-600 mt-1">${goal.current.toFixed(2)} of ${goal.target.toFixed(2)}</p>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button onclick='setState({ editingGoal: ${JSON.stringify(goal)}, showAddGoal: true })' class="text-blue-600 hover:text-blue-800 p-2">
+                                                ${icons.edit}
+                                            </button>
+                                            <button onclick="deleteGoal(${goal.id})" class="text-red-600 hover:text-red-800 p-2">
+                                                ${icons.trash}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                        <div class="bg-gradient-to-r from-purple-500 to-cyan-500 h-4 rounded-full transition-all duration-300 flex items-center justify-end pr-2" style="width: ${Math.min(progress, 100)}%">
+                                            ${progress > 10 ? `<span class="text-xs text-white font-bold">${progress.toFixed(0)}%</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500">${progress.toFixed(1)}% completed</p>
+                                </div>
+                            `;
+                        }).join('') : '<div class="bg-white rounded-2xl shadow-md p-6"><p class="text-gray-500 text-center py-8">No goals set yet. Add your first savings goal!</p></div>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSettings() {
+            const initials = state.currentUser.name.substring(0, 2).toUpperCase();
+            return `
+                <div class="space-y-4">
+                    <div class="bg-white rounded-2xl shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Account Settings</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="p-4 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-xl border border-purple-200">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                        ${initials}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800">${escapeHtml(state.currentUser.name)}</p>
+                                        <p class="text-sm text-gray-600">${escapeHtml(state.currentUser.email)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="setState({ showEditProfile: true, errorMessage: '', successMessage: '' })" class="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-left">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Edit Profile</p>
+                                        <p class="text-sm text-gray-600 mt-1">Update your name and email</p>
+                                    </div>
+                                    ${icons.edit}
+                                </div>
+                            </button>
+                            
+                            <button onclick="setState({ showResetPassword: true, errorMessage: '', successMessage: '' })" class="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition text-left">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-semibold text-gray-800">Change Password</p>
+                                        <p class="text-sm text-gray-600 mt-1">Update your account password</p>
+                                    </div>
+                                    ${icons.settings}
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Preferences</h3>
+                        <div class="space-y-3">
+                            <div class="p-4 bg-gray-50 rounded-xl">
+                                <p class="font-semibold text-gray-800">Notifications</p>
+                                <p class="text-sm text-gray-600 mt-1">Configure your notification preferences</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-xl">
+                                <p class="font-semibold text-gray-800">Currency</p>
+                                <p class="text-sm text-gray-600 mt-1">USD - US Dollar</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderModal(content) {
+            return `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAddTransactionModal() {
+            const t = state.editingTransaction;
+            return renderModal(`
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">${t ? 'Edit' : 'Add'} Transaction</h3>
+                        <button onclick="setState({ showAddTransaction: false, editingTransaction: null })">
+                            ${icons.x}
+                        </button>
+                    </div>
+
+                    <form onsubmit="handleAddTransaction(event)" class="space-y-4">
+                        <input type="hidden" name="type" value="${t ? t.type : 'expense'}" id="transactionType">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="document.getElementById('transactionType').value='expense'; this.className='flex-1 py-3 rounded-xl font-semibold transition bg-red-500 text-white'; this.nextElementSibling.className='flex-1 py-3 rounded-xl font-semibold transition bg-gray-100 text-gray-600'" class="flex-1 py-3 rounded-xl font-semibold transition ${!t || t.type === 'expense' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'}">
+                                Expense
+                            </button>
+                            <button type="button" onclick="document.getElementById('transactionType').value='income'; this.className='flex-1 py-3 rounded-xl font-semibold transition bg-green-500 text-white'; this.previousElementSibling.className='flex-1 py-3 rounded-xl font-semibold transition bg-gray-100 text-gray-600'" class="flex-1 py-3 rounded-xl font-semibold transition ${t && t.type === 'income' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600'}">
+                                Income
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                            <input type="text" name="category" required value="${t ? escapeHtml(t.category) : ''}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="e.g., Food, Transport">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                            <input type="number" step="0.01" name="amount" required value="${t ? t.amount : ''}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="0.00">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                            <input type="date" name="date" required value="${t ? t.date : new Date().toISOString().split('T')[0]}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea name="description" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none" rows="3" placeholder="Optional description">${t ? escapeHtml(t.description) : ''}</textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                            ${t ? 'Update' : 'Add'} Transaction
+                        </button>
+                    </form>
+                </div>
+            `);
+        }
+
+        function renderAddGoalModal() {
+            const g = state.editingGoal;
+            return renderModal(`
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">${g ? 'Edit' : 'Add'} Goal</h3>
+                        <button onclick="setState({ showAddGoal: false, editingGoal: null })">
+                            ${icons.x}
+                        </button>
+                    </div>
+
+                    <form onsubmit="handleAddGoal(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Goal Name</label>
+                            <input type="text" name="name" required value="${g ? escapeHtml(g.name) : ''}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="e.g., Emergency Fund">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Target Amount</label>
+                            <input type="number" step="0.01" name="target" required value="${g ? g.target : ''}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="0.00">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Current Amount</label>
+                            <input type="number" step="0.01" name="current" value="${g ? g.current : '0'}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="0.00">
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                            ${g ? 'Update' : 'Add'} Goal
+                        </button>
+                    </form>
+                </div>
+            `);
+        }
+
+        function renderEditProfileModal() {
+            return renderModal(`
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">Edit Profile</h3>
+                        <button onclick="setState({ showEditProfile: false, errorMessage: '', successMessage: '' })">
+                            ${icons.x}
+                        </button>
+                    </div>
+
+                    ${state.errorMessage ? `<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">${escapeHtml(state.errorMessage)}</div>` : ''}
+                    ${state.successMessage ? `<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">${escapeHtml(state.successMessage)}</div>` : ''}
+
+                    <form onsubmit="handleUpdateProfile(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input type="text" name="name" required value="${escapeHtml(state.currentUser.name)}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="John Doe">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" name="email" required value="${escapeHtml(state.currentUser.email)}" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="your@email.com">
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                            Update Profile
+                        </button>
+                    </form>
+                </div>
+            `);
+        }
+
+        function renderResetPasswordModal() {
+            return renderModal(`
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-800">Change Password</h3>
+                        <button onclick="setState({ showResetPassword: false, errorMessage: '', successMessage: '' })">
+                            ${icons.x}
+                        </button>
+                    </div>
+
+                    ${state.errorMessage ? `<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl">${escapeHtml(state.errorMessage)}</div>` : ''}
+                    ${state.successMessage ? `<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-xl">${escapeHtml(state.successMessage)}</div>` : ''}
+
+                    <form onsubmit="handleResetPassword(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                            <input type="password" name="currentPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="••••••••">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                            <input type="password" name="newPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="••••••••">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                            <input type="password" name="confirmPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none" placeholder="••••••••">
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 text-white py-4 rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition duration-200">
+                            Change Password
+                        </button>
+                    </form>
+                </div>
+            `);
+        }
+
+        function renderApp() {
+            if (!state.isLoggedIn) {
+                if (state.showForgotUsername) return renderForgotPages('username');
+                if (state.showForgotPassword) return renderForgotPages('password');
+                if (state.showSignUp) return renderSignUpPage();
+                return renderLoginPage();
+            }
+
+            const initials = state.currentUser.name.substring(0, 2).toUpperCase();
+            
+            return `
+                <div class="min-h-screen bg-gray-50 flex">
+                    <div class="${state.sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 transform lg:translate-x-0 transition-transform duration-300 ease-in-out z-30 w-64 bg-gradient-to-b from-purple-700 to-cyan-700 text-white shadow-2xl">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-purple-700">
+                                        ${icons.dollar}
+                                    </div>
+                                    <span class="text-xl font-bold">Budget App</span>
+                                </div>
+                                <button onclick="setState({ sidebarOpen: false })" class="lg:hidden">
+                                    ${icons.x}
+                                </button>
+                            </div>
+                            
+                            <nav class="space-y-2">
+                                <button onclick="setState({ currentPage: 'dashboard', sidebarOpen: false })" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${state.currentPage === 'dashboard' ? 'bg-white text-purple-700' : 'hover:bg-white/10'}">
+                                    ${icons.home}
+                                    <span class="font-medium">Dashboard</span>
+                                </button>
+                                
+                                <button onclick="setState({ currentPage: 'transactions', sidebarOpen: false })" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${state.currentPage === 'transactions' ? 'bg-white text-purple-700' : 'hover:bg-white/10'}">
+                                    ${icons.dollar}
+                                    <span class="font-medium">Transactions</span>
+                                </button>
+                                
+                                <button onclick="setState({ currentPage: 'goals', sidebarOpen: false })" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${state.currentPage === 'goals' ? 'bg-white text-purple-700' : 'hover:bg-white/10'}">
+                                    ${icons.target}
+                                    <span class="font-medium">Goals</span>
+                                </button>
+                                
+                                <button onclick="setState({ currentPage: 'settings', sidebarOpen: false })" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition ${state.currentPage === 'settings' ? 'bg-white text-purple-700' : 'hover:bg-white/10'}">
+                                    ${icons.settings}
+                                    <span class="font-medium">Settings</span>
+                                </button>
+                            </nav>
+                        </div>
+                        
+                        <div class="absolute bottom-0 left-0 right-0 p-6">
+                            <button onclick="handleLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition">
+                                ${icons.logout}
+                                <span class="font-medium">Logout</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    ${state.sidebarOpen ? '<div onclick="setState({ sidebarOpen: false })" class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>' : ''}
+
+                    <div class="flex-1 lg:ml-64">
+                        <header class="bg-white shadow-sm sticky top-0 z-10">
+                            <div class="px-4 py-4 flex items-center justify-between">
+                                <button onclick="setState({ sidebarOpen: true })" class="lg:hidden text-gray-600">
+                                    ${icons.menu}
+                                </button>
+                                <h2 class="text-xl font-bold text-gray-800 capitalize">${state.currentPage}</h2>
+                                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                                    ${initials}
+                                </div>
+                            </div>
+                        </header>
+
+                        <main class="p-4 pb-20">
+                            ${state.currentPage === 'dashboard' ? renderDashboard() : ''}
+                            ${state.currentPage === 'transactions' ? renderTransactions() : ''}
+                            ${state.currentPage === 'goals' ? renderGoals() : ''}
+                            ${state.currentPage === 'settings' ? renderSettings() : ''}
+                        </main>
+                    </div>
+
+                    ${state.showAddTransaction ? renderAddTransactionModal() : ''}
+                    ${state.showAddGoal ? renderAddGoalModal() : ''}
+                    ${state.showEditProfile ? renderEditProfileModal() : ''}
+                    ${state.showResetPassword ? renderResetPasswordModal() : ''}
+                </div>
+            `;
+        }
+
+        function render() {
+            document.getElementById('app').innerHTML = renderApp();
+        }
+
+        render();
+    </script>
+</body>
+</html>="font-semibold text-gray-800">${escapeHtml(t.category)}</p>
+                                            <p class
